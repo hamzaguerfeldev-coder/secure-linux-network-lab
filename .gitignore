@@ -1,0 +1,21 @@
+# Secrets and private keys
+.env
+*.pem
+*.key
+id_rsa
+id_ed25519
+
+# Logs and temporary files
+*.log
+*.tmp
+*.bak
+
+# Backup archives
+*.tar
+*.tar.gz
+*.zip
+
+# Editor files
+.vscode/
+.idea/
+*~
