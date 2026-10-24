@@ -326,15 +326,83 @@ For each significant failure, the project will document:
 6. **Verification:** the test that demonstrated the correction.  
 7. **Prevention:** how the issue could be detected earlier or avoided in future.  
 Examples of possible investigation scenarios include incorrect routes, DNS resolution failures, blocked return traffic, a stopped web service, and a backup archive that cannot be restored. These scenarios will only be documented as incidents if they are actually reproduced or encountered.  
-## **11. Git and Collaboration Workflow**  
-The project will use a dedicated Git repository and a feature-branch workflow.  
-- Use descriptive branch names such as feature/network-topology and feature/firewall-policy.  
-- Make small commits that describe the change.  
-- Review changes before merging.  
-- Use pull requests to document implementation and validation.  
-- Keep main in a working, documented state.  
-- Use annotated Git tags for validated releases.  
-The final release will be tagged v1.0.0 only when the implemented features, security tests, and documentation have been reviewed.  
+
+## **11. Git and Collaboration Workflow**
+
+The project follows a feature-branch workflow to keep `main` stable and make changes reviewable.
+
+### Branching strategy
+
+- `main` is the primary integration branch and should remain in a working, documented state.
+- Create a dedicated branch for each task.
+- Use descriptive branch names with consistent prefixes:
+  - `feature/` for new functionality, such as `feature/network-topology`.
+  - `fix/` for bug fixes, such as `fix/firewall-rule`.
+  - `docs/` for documentation changes, such as `docs/improve-git-workflow`.
+
+### Development workflow
+
+**1. Update the local main branch and create a task branch.**
+
+```bash
+git switch main
+git pull --ff-only origin main
+git switch -c docs/update-readme
+```
+
+Replace the example branch name with a descriptive name appropriate to the task.
+
+**2. Review and stage changes.**
+
+```bash
+git status
+git diff
+git add README.md
+git diff --staged
+```
+
+Review the staged changes before committing. Stage only the files relevant to the task.
+
+**3. Create a descriptive commit and publish the branch.**
+
+```bash
+git commit -m "docs: improve Git workflow documentation"
+git push -u origin docs/update-readme
+```
+
+Use a commit message that accurately describes the change. The branch name in the push command must match the current task branch.
+
+**4. Open and review a pull request.**
+
+- Open a pull request on GitHub with `main` as the base branch and the task branch as the compare branch.
+- Explain the purpose of the change and summarize the implementation.
+- Include relevant validation results and evidence when available.
+- Review the diff and address any identified issues before merging.
+- Merge only after the required reviews and checks have passed.
+
+**5. Synchronize the local repository after the merge.**
+
+```bash
+git switch main
+git pull --ff-only origin main
+git branch -d docs/update-readme
+```
+
+If GitHub has not automatically deleted the remote branch, it can be deleted after confirming that the pull request was merged:
+
+```bash
+git push origin --delete docs/update-readme
+git fetch origin --prune
+```
+
+Replace `docs/update-readme` with the actual branch name. Do not delete a branch containing work that has not been merged or otherwise preserved.
+
+### Release management
+
+- Keep commits focused and the Git history understandable.
+- Use pull requests to document changes and their review.
+- Create annotated version tags only for validated releases.
+- Tag the release `v1.0.0` only after the implemented features, security tests, and documentation have been reviewed against the project's acceptance criteria.
 ## **12. Security and Scope**  
 This is an isolated educational lab. All scans and security tests must target systems under the project's control.  
 The project will not expose internal services to the public Internet. VirtualBox internal networks will be used for the LAN and DMZ, and inbound access will remain restricted.  
