@@ -1,6 +1,6 @@
 # **Secure Linux Network & Infrastructure Diagnostics Lab**  
 **A practical infrastructure engineering project demonstrating Linux administration, network segmentation, firewall security, Bash automation, troubleshooting, and Git-based workflows.**  
-**Project status:** Planning and environment preparation  
+**Project status:** Three-VM network, IPv4 routing, outbound NAT, and persistence after reboot implemented and tested; firewall hardening and application services remain in progress.  
  **Environment:** VirtualBox · Ubuntu Server LTS · Three Linux virtual machines  
  **Focus:** Infrastructure fundamentals, security controls, operational reliability, and verifiable technical evidence  
 ## **1. Overview**  
@@ -9,7 +9,7 @@ The infrastructure is designed around a dedicated gateway, an internal client, a
 The goal is not simply to configure a working network. The goal is to demonstrate an engineering workflow:  
 **Design → Build → Validate → Break safely → Troubleshoot → Fix → Document**  
 Every major feature must have a clear purpose, a reproducible test, an expected result, an observed result, and supporting evidence.  
-The project will be developed incrementally. Features and test results will only be marked as completed after they have been implemented and verified.  
+The project is developed incrementally. Completed features are documented separately from planned work, and test results are only marked as passed after implementation and verification.  
 ## **2. Project Objectives**  
 ### **Linux administration**  
 - Install and configure minimal Ubuntu Server virtual machines.  
@@ -46,6 +46,7 @@ The project will be developed incrementally. Features and test results will only
 - Establish measurable acceptance criteria for the final release.  
 ## **3. Architecture**  
 The lab consists of three virtual machines connected through isolated VirtualBox networks.  
+**Target architecture:** The diagram below shows the intended final design. Not every service and security control shown has been deployed yet.  
                          Internet  
                             |  
                     VirtualBox NAT  
@@ -59,8 +60,8 @@ The lab consists of three virtual machines connected through isolated VirtualBox
                   | Network logging   |  
                   +-------------------+  
                      |             |  
-              Internal LAN    Internal DMZ  
-              10.10.1.0/24    10.10.2.0/24  
+              Client network  Server network
+              192.168.10.0/24 192.168.20.0/24  
                      |             |  
               +-------------+  +-------------+  
               |   CLIENT    |  | WEB SERVER  |  
@@ -73,37 +74,36 @@ The lab consists of three virtual machines connected through isolated VirtualBox
 |  |  |  
 | - | - |  
 | **Machine** |  **Primary responsibilities** |  
-| gateway |  Routing, NAT, firewall enforcement, DHCP, DNS forwarding, and network logs |  
-| client |  Connectivity checks, DNS queries, HTTP tests, and authorized security validation |  
-| web-server |  nginx hosting, restricted SSH administration, and service-level diagnostics |  
+| gateway |  Current: IPv4 routing, forwarding, outbound NAT. Planned: nftables enforcement, DHCP/DNS services, and network logging |  
+| client |  Current: network connectivity tests. Planned: internal DNS, HTTP, and authorized security validation |  
+| web-server |  Current: routed network connectivity. Planned: nginx hosting, restricted SSH administration, and service diagnostics |  
   
 ### **VirtualBox network design**  
 - **WAN:** VirtualBox NAT network interface on the gateway.  
 - **LAN:** Internal Network shared by the gateway and client.  
 - **DMZ:** Separate Internal Network shared by the gateway and web server.  
-The gateway will have three network interfaces. The client and web server will each have only the interface required for their respective zone.  
-The gateway must be the only path between the LAN, DMZ, and WAN. The web server must not have a second network interface that bypasses the firewall.  
+The current VirtualBox networks are named `lab-client` and `lab-server`. The LAN/DMZ labels describe the intended security zones; restrictive inter-zone firewall enforcement is not yet implemented.  
 ## **4. IP Addressing Plan**  
-The following is the initial design. Actual interface names and connectivity will be verified during implementation.  
+The current addressing and connectivity results are documented in [the architecture report](docs/network-lab/architecture.md) and [the validation report](docs/network-lab/validation.md).  
   
 |  |  |  
 | - | - |  
-| **Component** |  **Planned configuration** |  
+| **Component** |  **Current configuration** |  
 | Gateway WAN |  Address assigned through VirtualBox NAT |  
-| Gateway LAN |  10.10.1.1/24 |  
-| Client LAN |  DHCP reservation: 10.10.1.10/24 |  
-| Gateway DMZ |  10.10.2.1/24 |  
-| Web server DMZ |  10.10.2.10/24 |  
-| LAN default gateway |  10.10.1.1 |  
-| DMZ default gateway |  10.10.2.1 |  
+| Gateway client-side interface | 192.168.10.1/24 |  
+| Client | 192.168.10.10/24 (static) |  
+| Gateway server-side interface | 192.168.20.1/24 |  
+| Server | 192.168.20.10/24 (static) |  
+| Client default gateway | 192.168.10.1 |  
+| Server default gateway | 192.168.20.1 |  
 | Internal web hostname |  web.lab.test |  
-| Internal DNS resolver |  10.10.1.1 for the LAN client |  
+| Configured DNS resolver | 1.1.1.1 on client and server |  
   
-The 10.10.1.0/24 and 10.10.2.0/24 networks must remain separate routed networks.  
-The gateway will provide a DHCP reservation for the client and DNS resolution for the internal web hostname. The web server will use a static IP address.  
+The 192.168.10.0/24 and 192.168.20.0/24 networks are separate VirtualBox internal networks routed by the gateway.  
+The client and server currently use static IPv4 addresses. A dedicated DHCP service and internal DNS for the web hostname remain planned work.  
 The .test suffix is used for testing and avoids relying on a public DNS domain.  
 ## **5. Network and Security Policy**  
-The firewall policy will follow the principle of least privilege.  
+**Implementation status:** IPv4 forwarding, outbound NAT, and persistent forwarding rules are configured and tested. The current rules are not a default-deny firewall. The nftables least-privilege policy below is the target and has not yet been enforced.  
   
 |  |  |  |  
 | - | - | - |  
@@ -127,7 +127,7 @@ Firewall rules must be validated from the relevant source machines. A rule exist
 - Create the three virtual machines.  
 - Configure the WAN, LAN, and DMZ virtual networks.  
 - Identify and document each VM's network interfaces.  
-- Configure static addresses and the client DHCP reservation.  
+- Configure and validate static IPv4 addresses. A DHCP reservation is planned for a later stage.  
 - Validate routes and basic reachability.  
 **Acceptance criteria:**  
 - Each VM starts successfully.  
@@ -137,7 +137,7 @@ Firewall rules must be validated from the relevant source machines. A rule exist
 - Connectivity results are recorded.  
 ### **WP2 — Gateway routing and NAT**  
 - Enable IPv4 forwarding.  
-- Configure forwarding and source NAT with nftables.  
+- Configure and validate forwarding and source NAT. Migrate to the planned nftables policy in a later stage.  
 - Set the correct default routes.  
 - Validate outbound connectivity from the client.  
 - Inspect packets on the gateway's internal and external interfaces.  
